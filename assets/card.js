@@ -186,14 +186,27 @@ async function loadData() {
 loadImage();
 async function loadImage() {
   var db = await getDb();
-  var image = await getData(db, "image");
+  var cached = await getData(db, "image");
 
-  if (image) {
-    setImage(image.image);
+  if (cached) {
+    setImage(cached.image);
   }
 
-  console.log(params.get("image"));
-  fetch(params.get("image"), {
+  var imageUrl = localStorage.getItem("uploaded_image") || params.get("image");
+
+  if (!imageUrl) {
+    return;
+  }
+
+  if (imageUrl.startsWith("data:")) {
+    if (!cached || cached.image !== imageUrl) {
+      setImage(imageUrl);
+      saveData(db, { data: "image", image: imageUrl });
+    }
+    return;
+  }
+
+  fetch(imageUrl, {
     method: "GET",
     headers: {
       Authorization: "Client-ID e4d98a899c8c946",
@@ -206,15 +219,9 @@ async function loadImage() {
       reader.onload = (event) => {
         var base = event.target.result;
 
-        if (base !== image) {
+        if (!cached || base !== cached.image) {
           setImage(base);
-
-          var data = {
-            data: "image",
-            image: base,
-          };
-
-          saveData(db, data);
+          saveData(db, { data: "image", image: base });
         }
       };
     });

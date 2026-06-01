@@ -21,7 +21,10 @@ window.onload = async () => {
     files.push("/" + page + "?" + params);
   });
 
-  files.push(params.get("image"));
+  var imageParam = params.get("image");
+  if (imageParam && !imageParam.startsWith("data:")) {
+    files.push(imageParam);
+  }
 
   const index = files.indexOf("./assets/cache.js");
   files.splice(index, 1);
